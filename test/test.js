@@ -1,7 +1,7 @@
 var assert = require('assert');
 var Vec3 = require("vec3");
 
-const versions=['pe_0.14','1.8'];
+const versions=['pe_0.14','1.8','1.9'];
 versions.forEach(function(version) {
   var Chunk = require('../index.js')(version);
   var Block = require('prismarine-block')(version);
