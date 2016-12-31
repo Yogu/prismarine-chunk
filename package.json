@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "prepublish": "gulp",
+    "preinstall": "gulp",
     "test": "mocha"
   },
   "repository": {
