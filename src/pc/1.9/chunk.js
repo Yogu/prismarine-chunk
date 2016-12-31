@@ -171,23 +171,31 @@ class Chunk {
     this.blockData = Buffer.alloc(w * l * h * 2, 0); // This way, we can make slices when dumping
     let chunkY = 0;
     let offset = 0;
+    console.log('total size: ' + data.length);
     while (chunkY < 16) {
       if (bitMask & (1 << chunkY)) {
-        let { size, data: decodedData } = proto.parsePacketBuffer('section', data.slice(offset));
+        console.log('parsing chunk section');
+        let parsed = proto.parsePacketBuffer('section', data.slice(offset));
+        let size = parsed.metadata.size;
+        let decodedData = parsed.data;
+        console.log('size: ' + size);
+        console.log(decodedData);
         offset += size;
         for (let i = 0; Math.floor(i * decodedData.bitsPerBlock / 8) < decodedData.blockData.length; i++) {
           let cursorInData = Math.floor(i * decodedData.bitsPerBlock / 8);
           let startAtBit = (i * decodedData.bitsPerBlock) % 8;
+          // Do not read past the last byte; instead, move the startAtBit further
           if (cursorInData >= decodedData.blockData.length - 4) {
             startAtBit += 8 * (decodedData.blockData.length - cursorInData);
             cursorInData = decodedData.blockData.length - 4;
           }
           // TODO: Get the last few bytes correctly...
           let got = (decodedData.blockData.readUInt32BE(cursorInData) << (startAtBit)) >> (startAtBit + (32 - startAtBit - decodedData.bitsPerBlock));
-          if (decodedData.bitsPerBlock < 9)
-            this.blockData.writeUInt16BE(got < decodedData.palette.length ? decodedData.palette[got] : 0, (i + chunkY * 16 * 16 * 16) * 2);
-          else
-            this.blockData.writeUInt16BE(got, (i + chunkY * 16 * 16 * 16) * 2);
+          let blockstateId = got;
+          if (decodedData.bitsPerBlock < 9) {
+            blockstateId = got < decodedData.palette.length ? decodedData.palette[got] : 0;
+          }
+          this.blockData.writeUInt16BE(blockstateId, (i + chunkY * 16 * 16 * 16) * 2);
         }
         decodedData.blockLight.copy(this.blockLight, chunkY * w * l * 16 * 0.5);
         decodedData.skyLight.copy(this.skyLight, chunkY * w * l * 16 * 0.5);
